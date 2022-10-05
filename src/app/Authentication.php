@@ -118,25 +118,39 @@ class Authentication {
 	 *
 	 * @return \WP_User|\WP_Error WP user on success, WP_Error otherwise.
 	 */
-	public function create_user( array $discord_user ) {
-		$args = [
-			'user_login' => sanitize_text_field( $discord_user['username'] . $discord_user['discriminator'] ),
-			'user_email' => sanitize_email( $discord_user['email'] ),
-			'user_pass'  => wp_generate_password(),
-			'role'       => apply_filters( 'simple_discord_sso/default_role', 'subscriber', $discord_user ),
-		];
+	 public function create_user( array $discord_user ) {
 
-		$inserted_user_id = wp_insert_user( $args );
-		if ( is_wp_error( $inserted_user_id ) ) {
-			return $inserted_user_id;
-		}
+	 		if (email_exists($discord_user['email'])) {
 
-		$meta = $this->create_meta_array_for_user( $discord_user );
+	 			$user = get_user_by( 'email', $discord_user['email']) ;
+	 			$inserted_user_id = $user->ID;
 
-		update_user_meta( $inserted_user_id, 'simple_discord_sso', $meta );
+	 			if ( is_wp_error( $inserted_user_id ) ) {
+	 				return $inserted_user_id;
+	 			}
 
-		return get_userdata( $inserted_user_id );
-	}
+	 		} else {
+
+	 			$args = [
+	 				'user_login' => sanitize_text_field( $discord_user['username'] . $discord_user['discriminator'] ),
+	 				'user_email' => sanitize_email( $discord_user['email'] ),
+	 				'user_pass'  => wp_generate_password(),
+	 				'role'       => apply_filters( 'simple_discord_sso/default_role', 'subscriber', $discord_user ),
+	 			];
+
+	 			$inserted_user_id = wp_insert_user( $args );
+	 			if ( is_wp_error( $inserted_user_id ) ) {
+	 				return $inserted_user_id;
+	 			}
+
+	 		}
+
+	 		$meta = $this->create_meta_array_for_user( $discord_user );
+
+	 		update_user_meta( $inserted_user_id, 'simple_discord_sso', $meta );
+
+	 		return get_userdata( $inserted_user_id );
+	 	}
 
 
 	/**
